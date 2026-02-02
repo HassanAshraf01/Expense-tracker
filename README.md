@@ -1,16 +1,56 @@
-# React + Vite
+# Expense Tracker & Subscription Management UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
+This project is a **frontend UI for an Expense Tracker and Subscription Management system**, built as part of Day-1 tasks for the internship program. The project demonstrates **AI-assisted UI generation with manual refinement**, focusing on **UX, dark theme consistency, and product thinking**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features Implemented (Day 1)
 
-## React Compiler
+- **Dashboard**  
+  - Dark theme, premium SaaS look
+  - Summary cards for quick insights
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Add Expense Form**  
+  - Centered modal form
+  - Fields: Description, Amount, Category, Date, Optional Note
+  - Fully consistent with Dashboard theme
 
-## Expanding the ESLint configuration
+- **Expense Table**  
+  - Columns: Description, Category, Date, Amount, Actions (Edit/Delete)
+  - Hover effects for rows
+  - High readability in dark mode
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Expense Filters**  
+  - Filter by Date, Category, and Amount
+  - Clear Filters button
+  - Optimized calendar for quick year selection
+  - Fully responsive and dark-theme compliant
+
+- **Empty State UX**  
+  - Friendly messages when no expenses exist or filters return no results
+  - CTA button: "Add Expense"
+
+- **Logo & Branding**  
+  - Custom logo created for the project
+  - Dark theme applied consistently across UI
+
+- **AI-assisted development**  
+  - UI scaffolding generated with Anti-Gravity
+  - Manual refinement ensures consistency, usability, and professional design
+
+---
+
+## Tech Stack
+
+- **Frontend**: React + Tailwind CSS  
+- **Deployment**: Vercel (for live demo)  
+- **Version Control**: Git + GitHub  
+
+---
+
+## How to Run Locally
+
+1. Clone the repository:
+```bash
+git clone https://github.com/your-username/expense-tracker-ui.git
