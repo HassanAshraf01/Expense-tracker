@@ -53,4 +53,4 @@ This project is a **frontend UI for an Expense Tracker and Subscription Manageme
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/expense-tracker-ui.git
+git clone https://github.com/HassanAshraf01/Expense-tracker.git
