@@ -19,8 +19,11 @@ const ExpenseFilterBar = ({
             setDateFilter('');
             return;
         }
-        // Convert to YYYY-MM-DD manually to avoid timezone issues or use simple ISO split
-        const formatted = date.toISOString().split('T')[0];
+        // Create YYYY-MM-DD string using local time to avoid timezone shifts
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const formatted = `${year}-${month}-${day}`;
         setDateFilter(formatted);
     };
 

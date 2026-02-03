@@ -9,6 +9,7 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
         category: 'Food',
         date: new Date().toISOString().split('T')[0]
     });
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         if (initialData) {
@@ -16,9 +17,33 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
         }
     }, [initialData]);
 
+    const validateForm = () => {
+        const newErrors = {};
+
+        // Description Validation
+        if (!formData.title || !formData.title.trim()) {
+            newErrors.title = "Description is required";
+        } else if (!/^[A-Za-z\s]+$/.test(formData.title)) {
+            newErrors.title = "Description must contain only alphabets and spaces";
+        }
+
+        // Date Validation
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (formData.date > todayStr) {
+            newErrors.date = "Future dates are not allowed";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!formData.title || !formData.amount) return;
+
+        if (!validateForm()) return;
+
+        if (!formData.amount) return; // Basic amount check still needed if not removing required
+
         onAdd({
             ...formData,
             id: initialData ? initialData.id : Date.now(),
@@ -30,6 +55,18 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
         if (!date) return;
         const formatted = date.toISOString().split('T')[0];
         setFormData({ ...formData, date: formatted });
+        // Clear date error when user changes date
+        if (errors.date) {
+            setErrors(prev => ({ ...prev, date: '' }));
+        }
+    };
+
+    const handleDescriptionChange = (e) => {
+        setFormData({ ...formData, title: e.target.value });
+        // Clear description error when user types
+        if (errors.title) {
+            setErrors(prev => ({ ...prev, title: '' }));
+        }
     };
 
     return (
@@ -49,12 +86,12 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
                         <label className="block text-sm font-medium text-slate-400 mb-1">Description</label>
                         <input
                             type="text"
-                            required
-                            className="w-full px-3 py-2 bg-[#0f172a] border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-slate-600 outline-none transition-all"
+                            className={`w-full px-3 py-2 bg-[#0f172a] border ${errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-700 focus:border-indigo-500/50 focus:ring-indigo-500/50'} rounded-xl focus:ring-2 text-white placeholder-slate-600 outline-none transition-all`}
                             placeholder="e.g. Netflix Subscription"
                             value={formData.title}
-                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            onChange={handleDescriptionChange}
                         />
+                        {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -98,7 +135,7 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
                             <DatePicker
                                 selected={formData.date ? new Date(formData.date) : new Date()}
                                 onChange={handleDateChange}
-                                className="w-full pl-3 pr-10 py-2 bg-[#0f172a] border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white outline-none transition-all cursor-pointer"
+                                className={`w-full pl-3 pr-10 py-2 bg-[#0f172a] border ${errors.date ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-700 focus:border-indigo-500/50 focus:border-indigo-500/50'} rounded-xl focus:ring-2 text-white outline-none transition-all cursor-pointer`}
                                 wrapperClassName="w-full"
                                 dateFormat="yyyy-MM-dd"
                                 showYearDropdown
@@ -107,11 +144,12 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
                                 showMonthDropdown
                             />
                             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className={`w-5 h-5 ${errors.date ? 'text-red-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
                         </div>
+                        {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
                     </div>
 
                     <div className="pt-4 flex gap-3">

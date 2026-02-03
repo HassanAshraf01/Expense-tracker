@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ExpenseTable from './ExpenseTable';
 import ExpenseFilterBar from './ExpenseFilterBar';
 import EmptyState from './EmptyState';
@@ -13,23 +13,46 @@ const INITIAL_DATA = [
 ];
 
 const Dashboard = () => {
-    const [expenses, setExpenses] = useState(INITIAL_DATA);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [editingExpense, setEditingExpense] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('All');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [minAmount, setMinAmount] = useState('');
-    const [maxAmount, setMaxAmount] = useState('');
+    // Main source of truth for the app
+    // This array stores ALL expenses shown in the app
+    const [expenses, setExpenses] = useState(() => {
+        try {
+            const savedExpenses = localStorage.getItem('expenses');
+            const parsed = savedExpenses ? JSON.parse(savedExpenses) : INITIAL_DATA;
+            return Array.isArray(parsed) ? parsed : INITIAL_DATA;
+        } catch (error) {
+            console.error("Failed to load expenses:", error);
+            return INITIAL_DATA;
+        }
+    });
 
+    useEffect(() => {
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+    }, [expenses]);
+
+    // Controls whether the Add/Edit Expense modal is visible
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+    // Holds the expense object when editing, null when adding
+    const [editingExpense, setEditingExpense] = useState(null);
+
+    // Search input value
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Selected category filter
+    const [categoryFilter, setCategoryFilter] = useState('All');
+
+    // Selected date filter
+    const [dateFilter, setDateFilter] = useState('');
+    const [amountFilter, setAmountFilter] = useState('');
+
+    // Resets all filter values back to default
+    // Original expenses array remains unchanged
     const handleClearFilters = () => {
         setSearchQuery('');
         setCategoryFilter('All');
-        setStartDate('');
-        setEndDate('');
-        setMinAmount('');
-        setMaxAmount('');
+        setDateFilter('');
+        setAmountFilter('');
     };
 
     const handleSaveExpense = (savedExpense) => {
@@ -42,32 +65,38 @@ const Dashboard = () => {
         setEditingExpense(null);
     };
 
+    // Updates the editingExpense state when an edit button is clicked
+    // This triggers the modal to open in edit mode
     const handleEditExpense = (expense) => {
         setEditingExpense(expense);
         setIsAddModalOpen(true);
     };
 
+    // Removes an expense from the array based on its ID
+    // Updates the UI by filtering out the deleted expense
     const handleDeleteExpense = (id) => {
         setExpenses(expenses.filter(ex => ex.id !== id));
     };
 
+    // Resets modal state to close the modal and clear any editing data
     const handleCloseModal = () => {
+        // Close the modal
         setIsAddModalOpen(false);
+        // Clear any expense data that was being edited
         setEditingExpense(null);
     };
 
+    // Filters the main expenses array based on the current filter settings
+    // Returns a new array containing only the expenses that match all criteria
     const filteredExpenses = expenses.filter(ex => {
         const matchesSearch = ex.title.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = categoryFilter === 'All' || ex.category === categoryFilter;
 
-        const expenseDate = new Date(ex.date);
-        const matchesStartDate = !startDate || expenseDate >= new Date(startDate);
-        const matchesEndDate = !endDate || expenseDate <= new Date(endDate);
+        const matchesDate = !dateFilter || ex.date === dateFilter;
 
-        const matchesMinAmount = !minAmount || ex.amount >= parseFloat(minAmount);
-        const matchesMaxAmount = !maxAmount || ex.amount <= parseFloat(maxAmount);
+        const matchesAmount = !amountFilter || ex.amount === parseFloat(amountFilter);
 
-        return matchesSearch && matchesCategory && matchesStartDate && matchesEndDate && matchesMinAmount && matchesMaxAmount;
+        return matchesSearch && matchesCategory && matchesDate && matchesAmount;
     });
 
     const currentMonth = new Date().getMonth();
@@ -90,11 +119,11 @@ const Dashboard = () => {
             {/* Navbar */}
             <nav className="bg-[#1e293b]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-30 transition-all duration-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
-                        <div className="flex items-center gap-3 group">
-                            <img src={logo} alt="ExpenseTracker Logo" className="h-14 w-14 rounded-full object-cover ring-2 ring-white/10 shadow-lg group-hover:scale-105 transition-transform duration-200" />
+                    <div className="flex justify-between h-28">
+                        <div className="flex items-center gap-3 -ml-6">
+                            <img src={logo} alt="Expense Tracker" className="h-40 w-auto object-contain hover:scale-105 transition-transform duration-200" />
                             <span className="text-xl font-bold text-white tracking-tight">
-                                ExpenseTracker
+                                Expense Tracker
                             </span>
                         </div>
                         <div className="flex items-center gap-4">
@@ -229,14 +258,10 @@ const Dashboard = () => {
                             setSearchQuery={setSearchQuery}
                             categoryFilter={categoryFilter}
                             setCategoryFilter={setCategoryFilter}
-                            startDate={startDate}
-                            setStartDate={setStartDate}
-                            endDate={endDate}
-                            setEndDate={setEndDate}
-                            minAmount={minAmount}
-                            setMinAmount={setMinAmount}
-                            maxAmount={maxAmount}
-                            setMaxAmount={setMaxAmount}
+                            dateFilter={dateFilter}
+                            setDateFilter={setDateFilter}
+                            amountFilter={amountFilter}
+                            setAmountFilter={setAmountFilter}
                             onClearFilters={handleClearFilters}
                         />
 
