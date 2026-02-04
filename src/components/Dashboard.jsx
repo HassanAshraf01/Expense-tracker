@@ -12,7 +12,11 @@ const INITIAL_DATA = [
     { id: 3, title: 'Uber to Work', amount: 24.00, category: 'Transportation', date: '2023-11-05' },
 ];
 
+import { useNavigate } from 'react-router-dom';
+
 const Dashboard = () => {
+    const navigate = useNavigate();
+
     // Main source of truth for the app
     // This array stores ALL expenses shown in the app
     const [expenses, setExpenses] = useState(() => {
@@ -86,6 +90,14 @@ const Dashboard = () => {
         setEditingExpense(null);
     };
 
+    // Logout handler
+    const handleLogout = () => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user_name');
+        navigate('/login');
+    };
+
     // Filters the main expenses array based on the current filter settings
     // Returns a new array containing only the expenses that match all criteria
     const filteredExpenses = expenses.filter(ex => {
@@ -126,17 +138,30 @@ const Dashboard = () => {
                                 Expense Tracker
                             </span>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <button className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5 cursor-pointer">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                </svg>
-                            </button>
-                            <div className="flex items-center gap-2 pl-4 border-l border-white/10">
-                                <div className="h-9 w-9 rounded-full bg-slate-700 border border-white/10 shadow-sm flex items-center justify-center text-slate-200 text-sm font-bold cursor-pointer hover:bg-slate-600 transition-all">
-                                    JD
+                        <div className="flex items-center gap-4 -mr-4">
+                            {/* User Avatar */}
+                            {localStorage.getItem('user_name') && (
+                                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20 border border-white/10 text-white font-bold text-sm tracking-wider select-none transform hover:scale-105 transition-transform duration-200" title={localStorage.getItem('user_name')}>
+                                    {(() => {
+                                        const name = localStorage.getItem('user_name') || '';
+                                        const parts = name.trim().split(' ');
+                                        if (parts.length >= 2) {
+                                            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                                        }
+                                        return name.slice(0, 2).toUpperCase();
+                                    })()}
                                 </div>
-                            </div>
+                            )}
+
+                            <button
+                                onClick={handleLogout}
+                                className="group flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/50 rounded-xl transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-rose-500/10 active:scale-95"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-rose-400 transition-colors duration-300">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                                </svg>
+                                <span>Logout</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -146,7 +171,7 @@ const Dashboard = () => {
                 {/* Summary Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Card 1: Total Expenses */}
-                    <div className="relative overflow-hidden bg-[#1e293b] rounded-2xl p-6 shadow-lg border border-white/5 hover:border-indigo-500/30 transition-all duration-300 cursor-pointer group">
+                    <div className="relative overflow-hidden bg-[#334155] rounded-2xl p-6 shadow-lg border border-white/5 hover:border-indigo-500/30 transition-all duration-300 cursor-pointer group">
                         <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
                             <svg className="w-32 h-32 text-indigo-400 transform translate-x-4 -translate-y-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V9h-2.82v9.09h2.82zM12 11c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
                         </div>
@@ -178,7 +203,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* Card 2: Highest Category */}
-                    <div className="relative overflow-hidden bg-[#1e293b] rounded-2xl p-6 shadow-lg border border-white/5 hover:border-orange-500/30 transition-all duration-300 cursor-pointer group">
+                    <div className="relative overflow-hidden bg-[#334155] rounded-2xl p-6 shadow-lg border border-white/5 hover:border-orange-500/30 transition-all duration-300 cursor-pointer group">
                         <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
                             <svg className="w-32 h-32 text-orange-400 transform translate-x-4 -translate-y-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                         </div>
@@ -206,7 +231,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* Card 3: Total Transactions */}
-                    <div className="relative overflow-hidden bg-[#1e293b] rounded-2xl p-6 shadow-lg border border-white/5 hover:border-purple-500/30 transition-all duration-300 cursor-pointer group">
+                    <div className="relative overflow-hidden bg-[#334155] rounded-2xl p-6 shadow-lg border border-white/5 hover:border-purple-500/30 transition-all duration-300 cursor-pointer group">
                         <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
                             <svg className="w-32 h-32 text-purple-400 transform translate-x-4 -translate-y-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                         </div>
@@ -234,7 +259,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Main Content Area */}
-                <section className="bg-[#1e293b] rounded-2xl shadow-lg border border-white/5 overflow-hidden">
+                <section className="bg-[#334155] rounded-2xl shadow-lg border border-white/5 overflow-hidden">
                     <div className="p-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <h2 className="text-xl font-bold text-white tracking-tight">Recent Transactions</h2>
