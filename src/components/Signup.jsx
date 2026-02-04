@@ -29,11 +29,12 @@ const Signup = () => {
             const getErrorMessage = (error) => {
                 if (error.response?.data) {
                     const data = error.response.data;
-                    if (data.email) return data.email[0];
-                    if (data.password) return data.password[0];
-                    if (data.name) return data.name[0];
+                    if (data.email) return Array.isArray(data.email) ? data.email[0] : data.email;
+                    if (data.password) return Array.isArray(data.password) ? data.password[0] : data.password;
+                    if (data.name) return Array.isArray(data.name) ? data.name[0] : data.name;
                     // Fallback for other errors
-                    return Object.values(data).flat()[0] || 'Signup failed. Please try again.';
+                    const firstError = Object.values(data).flat()[0];
+                    return typeof firstError === 'string' ? firstError : 'Signup failed. Please try again.';
                 }
                 return 'Signup failed. Please check your connection.';
             };
