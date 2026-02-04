@@ -32,18 +32,23 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         
         # Send welcome email
-        try:
-            from django.core.mail import send_mail
-            from django.conf import settings
-            send_mail(
-                subject='Account Created Successfully',
-                message=f'Hello {user.name},\n\nYour account has been created successfully. Welcome to Expense Tracker!',
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[user.email],
-                fail_silently=True,
-            )
-        except Exception as e:
-            # print(f"Failed to send email: {e}")
-            pass
+        def send_welcome_email():
+            try:
+                from django.core.mail import send_mail
+                from django.conf import settings
+                send_mail(
+                    subject='Account Created Successfully',
+                    message=f'Hello {user.name},\n\nYour account has been created successfully. Welcome to Expense Tracker!',
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+
+        # Run email sending in a separate thread so it doesn't block response
+        import threading
+        email_thread = threading.Thread(target=send_welcome_email)
+        email_thread.start()
 
         return user
