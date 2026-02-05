@@ -35,9 +35,15 @@ const Signup = () => {
                     if (data.email) return Array.isArray(data.email) ? data.email[0] : data.email;
                     if (data.password) return Array.isArray(data.password) ? data.password[0] : data.password;
                     if (data.name) return Array.isArray(data.name) ? data.name[0] : data.name;
+                    if (data.detail) return data.detail; // Django typically sends 'detail' key
+
                     // Fallback for other errors
-                    const firstError = Object.values(data).flat()[0];
-                    return typeof firstError === 'string' ? firstError : 'Signup failed. Please try again.';
+                    try {
+                        const firstError = Object.values(data).flat()[0];
+                        return typeof firstError === 'string' ? firstError : JSON.stringify(data);
+                    } catch (e) {
+                        return JSON.stringify(data);
+                    }
                 }
                 return 'Signup failed. Please check your connection.';
             };
