@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import api from '../api/axios';
 
-const AddExpense = ({ onAdd, onCancel, initialData }) => {
+const AddExpense = ({ onAdd, onCancel, initialData, refreshData }) => {
     const [formData, setFormData] = useState({
         title: '',
         amount: '',
@@ -10,6 +11,7 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
         date: new Date().toISOString().split('T')[0]
     });
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (initialData) {
@@ -23,8 +25,8 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
         // Description Validation
         if (!formData.title || !formData.title.trim()) {
             newErrors.title = "Description is required";
-        } else if (!/^[A-Za-z\s]+$/.test(formData.title)) {
-            newErrors.title = "Description must contain only alphabets and spaces";
+        } else if (!/^[A-Za-z0-9\s]+$/.test(formData.title)) {
+            newErrors.title = "Description must contain only alphabets, numbers, and spaces";
         }
 
         // Date Validation
@@ -37,18 +39,40 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
         if (!formData.amount) return; // Basic amount check still needed if not removing required
 
-        onAdd({
-            ...formData,
-            id: initialData ? initialData.id : Date.now(),
-            amount: parseFloat(formData.amount)
-        });
+        setLoading(true);
+
+        try {
+            let response;
+            if (initialData) {
+                // Update existing expense
+                response = await api.put(`expenses/${initialData.id}/`, {
+                    ...formData,
+                    amount: parseFloat(formData.amount)
+                });
+            } else {
+                // Create new expense
+                response = await api.post('expenses/', {
+                    ...formData,
+                    amount: parseFloat(formData.amount)
+                });
+            }
+            if (refreshData) {
+                await refreshData();
+            }
+            onAdd();
+        } catch (err) {
+            console.error("Failed to save expense:", err);
+            alert("Failed to save expense: " + (err.response?.data?.detail || JSON.stringify(err.response?.data) || err.message));
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleDateChange = (date) => {
@@ -156,15 +180,17 @@ const AddExpense = ({ onAdd, onCancel, initialData }) => {
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="flex-1 px-4 py-2 border border-slate-700 text-slate-300 rounded-xl hover:bg-slate-800 font-medium transition-colors cursor-pointer"
+                            disabled={loading}
+                            className="flex-1 px-4 py-2 border border-slate-700 text-slate-300 rounded-xl hover:bg-slate-800 font-medium transition-colors cursor-pointer disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 font-medium shadow-lg shadow-indigo-500/20 transition-all cursor-pointer"
+                            disabled={loading}
+                            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 font-medium shadow-lg shadow-indigo-500/20 transition-all cursor-pointer disabled:opacity-50"
                         >
-                            {initialData ? 'Save Changes' : 'Add Expense'}
+                            {loading ? 'Saving...' : (initialData ? 'Save Changes' : 'Add Expense')}
                         </button>
                     </div>
                 </form>

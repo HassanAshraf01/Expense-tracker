@@ -5,6 +5,7 @@ import AuthLayout from './AuthLayout';
 
 const Signup = () => {
     const [name, setName] = useState('');
+    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +21,7 @@ const Signup = () => {
         try {
             await api.post('auth/signup/', {
                 name,
+                username,
                 email,
                 password
             });
@@ -29,6 +31,7 @@ const Signup = () => {
             const getErrorMessage = (error) => {
                 if (error.response?.data) {
                     const data = error.response.data;
+                    if (data.username) return Array.isArray(data.username) ? data.username[0] : data.username;
                     if (data.email) return Array.isArray(data.email) ? data.email[0] : data.email;
                     if (data.password) return Array.isArray(data.password) ? data.password[0] : data.password;
                     if (data.name) return Array.isArray(data.name) ? data.name[0] : data.name;
@@ -59,6 +62,21 @@ const Signup = () => {
                         onChange={(e) => setName(e.target.value)}
                         className="w-full px-4 py-3 bg-[#0f172a] border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-200"
                         placeholder="John Doe"
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="username" className="block text-sm font-medium text-slate-300 mb-2">
+                        Username
+                    </label>
+                    <input
+                        id="username"
+                        type="text"
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full px-4 py-3 bg-[#0f172a] border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-200"
+                        placeholder="johndoe123"
                     />
                 </div>
 

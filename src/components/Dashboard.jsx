@@ -4,35 +4,35 @@ import ExpenseFilterBar from './ExpenseFilterBar';
 import EmptyState from './EmptyState';
 import AddExpense from './AddExpense';
 import logo from '../assets/logo.png';
-
-// Dummy data for initial view
-const INITIAL_DATA = [
-    { id: 1, title: 'Netflix Subscription', amount: 15.99, category: 'Subscription', date: '2023-11-01' },
-    { id: 2, title: 'Grocery Run', amount: 85.50, category: 'Food', date: '2023-11-03' },
-    { id: 3, title: 'Uber to Work', amount: 24.00, category: 'Transportation', date: '2023-11-05' },
-];
-
-import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
+import Navbar from './Navbar';
 
 const Dashboard = () => {
-    const navigate = useNavigate();
-
     // Main source of truth for the app
     // This array stores ALL expenses shown in the app
-    const [expenses, setExpenses] = useState(() => {
+    const [expenses, setExpenses] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchExpenses = async () => {
+        setIsLoading(true);
         try {
-            const savedExpenses = localStorage.getItem('expenses');
-            const parsed = savedExpenses ? JSON.parse(savedExpenses) : INITIAL_DATA;
-            return Array.isArray(parsed) ? parsed : INITIAL_DATA;
+            const response = await api.get('expenses/');
+            // Ensure amounts are numbers
+            const processedExpenses = response.data.map(expense => ({
+                ...expense,
+                amount: parseFloat(expense.amount)
+            }));
+            setExpenses(processedExpenses);
         } catch (error) {
             console.error("Failed to load expenses:", error);
-            return INITIAL_DATA;
+        } finally {
+            setIsLoading(false);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem('expenses', JSON.stringify(expenses));
-    }, [expenses]);
+        fetchExpenses();
+    }, []);
 
     // Controls whether the Add/Edit Expense modal is visible
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -59,12 +59,7 @@ const Dashboard = () => {
         setAmountFilter('');
     };
 
-    const handleSaveExpense = (savedExpense) => {
-        if (editingExpense) {
-            setExpenses(expenses.map(ex => ex.id === savedExpense.id ? savedExpense : ex));
-        } else {
-            setExpenses([savedExpense, ...expenses]);
-        }
+    const handleSaveExpense = () => {
         setIsAddModalOpen(false);
         setEditingExpense(null);
     };
@@ -78,8 +73,13 @@ const Dashboard = () => {
 
     // Removes an expense from the array based on its ID
     // Updates the UI by filtering out the deleted expense
-    const handleDeleteExpense = (id) => {
-        setExpenses(expenses.filter(ex => ex.id !== id));
+    const handleDeleteExpense = async (id) => {
+        try {
+            await api.delete(`expenses/${id}/`);
+            setExpenses(expenses.filter(ex => ex.id !== id));
+        } catch (error) {
+            console.error("Failed to delete expense:", error);
+        }
     };
 
     // Resets modal state to close the modal and clear any editing data
@@ -88,14 +88,6 @@ const Dashboard = () => {
         setIsAddModalOpen(false);
         // Clear any expense data that was being edited
         setEditingExpense(null);
-    };
-
-    // Logout handler
-    const handleLogout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user_name');
-        navigate('/login');
     };
 
     // Filters the main expenses array based on the current filter settings
@@ -111,9 +103,33 @@ const Dashboard = () => {
         return matchesSearch && matchesCategory && matchesDate && matchesAmount;
     });
 
-    const currentMonth = new Date().getMonth();
-    const currentMonthExpenses = expenses.filter(ex => new Date(ex.date).getMonth() === currentMonth);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonthIdx = now.getMonth();
+
+    // Last month calculation
+    const prevDate = new Date(currentYear, currentMonthIdx - 1, 1);
+    const prevYear = prevDate.getFullYear();
+    const prevMonthIdx = prevDate.getMonth();
+
+    const currentMonthExpenses = expenses.filter(ex => {
+        const d = new Date(ex.date);
+        return d.getMonth() === currentMonthIdx && d.getFullYear() === currentYear;
+    });
+
+    const lastMonthExpenses = expenses.filter(ex => {
+        const d = new Date(ex.date);
+        return d.getMonth() === prevMonthIdx && d.getFullYear() === prevYear;
+    });
+
     const totalSpentMonth = currentMonthExpenses.reduce((sum, ex) => sum + ex.amount, 0);
+    const totalSpentLastMonth = lastMonthExpenses.reduce((sum, ex) => sum + ex.amount, 0);
+
+    const hasLastMonthData = totalSpentLastMonth > 0;
+    const percentageChange = hasLastMonthData
+        ? ((totalSpentMonth - totalSpentLastMonth) / totalSpentLastMonth) * 100
+        : 0;
+    const isIncrease = percentageChange > 0;
 
     const categoryTotals = expenses.reduce((acc, ex) => {
         acc[ex.category] = (acc[ex.category] || 0) + ex.amount;
@@ -127,47 +143,17 @@ const Dashboard = () => {
     const totalTransactions = expenses.length;
 
     return (
-        <div className="min-h-screen bg-[#0f172a] font-sans text-slate-300 pb-20 selection:bg-indigo-500/30 selection:text-indigo-200">
-            {/* Navbar */}
-            <nav className="bg-[#1e293b]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-30 transition-all duration-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-28">
-                        <div className="flex items-center gap-3 -ml-6">
-                            <img src={logo} alt="Expense Tracker" className="h-40 w-auto object-contain hover:scale-105 transition-transform duration-200" />
-                            <span className="text-xl font-bold text-white tracking-tight">
-                                Expense Tracker
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-4 -mr-4">
-                            {/* User Avatar */}
-                            {localStorage.getItem('user_name') && (
-                                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20 border border-white/10 text-white font-bold text-sm tracking-wider select-none transform hover:scale-105 transition-transform duration-200" title={localStorage.getItem('user_name')}>
-                                    {(() => {
-                                        const name = localStorage.getItem('user_name') || '';
-                                        const parts = name.trim().split(' ');
-                                        if (parts.length >= 2) {
-                                            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                                        }
-                                        return name.slice(0, 2).toUpperCase();
-                                    })()}
-                                </div>
-                            )}
+        <div className="min-h-screen bg-[#0f172a] font-sans text-slate-300 pb-20 selection:bg-indigo-500/30 selection:text-indigo-200 relative overflow-hidden">
+            {/* Background Animations */}
+            <div className="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-500/30 rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-blob"></div>
+                <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] bg-indigo-500/30 rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-blob [animation-delay:2s]"></div>
+                <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-pink-500/30 rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-blob [animation-delay:4s]"></div>
+            </div>
 
-                            <button
-                                onClick={handleLogout}
-                                className="group flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/50 rounded-xl transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-rose-500/10 active:scale-95"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-rose-400 transition-colors duration-300">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                                </svg>
-                                <span>Logout</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            <Navbar />
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 relative z-10">
                 {/* Summary Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Card 1: Total Expenses */}
@@ -190,15 +176,21 @@ const Dashboard = () => {
                                     {totalSpentMonth.toFixed(2)}
                                 </div>
                             </div>
-                            <div className="mt-4 flex items-center gap-2">
-                                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                    <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                    </svg>
-                                    2.5%
-                                </span>
-                                <span className="text-sm text-slate-500 font-medium">vs last month</span>
-                            </div>
+                            {hasLastMonthData && (
+                                <div className="mt-4 flex items-center gap-2">
+                                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${isIncrease ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                                        <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            {isIncrease ? (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                            ) : (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                                            )}
+                                        </svg>
+                                        {Math.abs(percentageChange).toFixed(1)}%
+                                    </span>
+                                    <span className="text-sm text-slate-500 font-medium">vs last month</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -308,6 +300,7 @@ const Dashboard = () => {
                     onAdd={handleSaveExpense}
                     onCancel={handleCloseModal}
                     initialData={editingExpense}
+                    refreshData={fetchExpenses}
                 />
             )}
         </div>

@@ -127,3 +127,36 @@ body {
 .react-datepicker__month-read-view {
   color: #e2e8f0 !important;
 }
+
+/* Hide default browser password reveal button */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
+/* Fix React Datepicker Close/Clear Icon Position */
+.react-datepicker__close-icon {
+  right: 2.5rem !important;
+  /* Position to the left of the custom calendar icon */
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  top: 0 !important;
+}
+
+.react-datepicker__close-icon::after {
+  background-color: transparent !important;
+  color: #94a3b8 !important;
+  /* slate-400 */
+  font-size: 1.5rem !important;
+  height: auto !important;
+  width: auto !important;
+  content: "×" !important;
+  line-height: 1 !important;
+}
+
+.react-datepicker__close-icon:hover::after {
+  color: #e2e8f0 !important;
+  /* slate-200 */
+}
