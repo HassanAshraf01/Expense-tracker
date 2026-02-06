@@ -78,3 +78,20 @@ class PasswordResetConfirm(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'message': 'Password reset success'}, status=status.HTTP_200_OK)
+
+class CreateSuperuserView(generics.GenericAPIView):
+    permission_classes = (AllowAny,)
+    
+    def get(self, request):
+        try:
+            if not User.objects.filter(email='hassu003.lko@gmail.com').exists():
+                User.objects.create_superuser(
+                    email='hassu003.lko@gmail.com',
+                    username='admin',
+                    password='Hassan123',
+                    name='Admin'
+                )
+                return Response({'message': 'Superuser created successfully'}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Superuser already exists'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
