@@ -25,8 +25,8 @@ const AddExpense = ({ onAdd, onCancel, initialData, refreshData }) => {
         // Description Validation
         if (!formData.title || !formData.title.trim()) {
             newErrors.title = "Description is required";
-        } else if (!/^[A-Za-z0-9\s]+$/.test(formData.title)) {
-            newErrors.title = "Description must contain only alphabets, numbers, and spaces";
+        } else if (!/^[A-Za-z\s]+$/.test(formData.title)) {
+            newErrors.title = "Description must contain only alphabets and spaces";
         }
 
         // Date Validation
@@ -159,6 +159,7 @@ const AddExpense = ({ onAdd, onCancel, initialData, refreshData }) => {
                             <DatePicker
                                 selected={formData.date ? new Date(formData.date) : new Date()}
                                 onChange={handleDateChange}
+                                maxDate={new Date()}
                                 className={`w-full pl-3 pr-10 py-2 bg-[#0f172a] border ${errors.date ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-700 focus:border-indigo-500/50 focus:border-indigo-500/50'} rounded-xl focus:ring-2 text-white outline-none transition-all cursor-pointer`}
                                 wrapperClassName="w-full"
                                 dateFormat="yyyy-MM-dd"
