@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import ExpenseTable from './ExpenseTable';
 import ExpenseFilterBar from './ExpenseFilterBar';
 import EmptyState from './EmptyState';
@@ -8,6 +9,7 @@ import api from '../api/axios';
 import Navbar from './Navbar';
 
 const Dashboard = () => {
+    const location = useLocation();
     // Main source of truth for the app
     // This array stores ALL expenses shown in the app
     const [expenses, setExpenses] = useState([]);
@@ -32,7 +34,15 @@ const Dashboard = () => {
 
     useEffect(() => {
         fetchExpenses();
-    }, []);
+        // Check if we should open the Add Expense modal automatically
+        if (location.state?.openAddExpense) {
+            setIsAddModalOpen(true);
+            // Clean up state to prevent reopening on refresh or back navigation
+            // Note: In strict mode this might double trigger but setIsAddModalOpen is idempotent sort of.
+            // Ideally we replace history but for now this is fine.
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     // Controls whether the Add/Edit Expense modal is visible
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -141,6 +151,57 @@ const Dashboard = () => {
         : 'No Data';
 
     const totalTransactions = expenses.length;
+
+    const handleExportCSV = () => {
+        if (filteredExpenses.length === 0) {
+            // Check if we have a toast notification system, otherwise use alert/console
+            // Using alert for immediate feedback as requested ("Disabled state or toast") - alert matches previous pattern
+            alert("No expenses available to export via CSV.");
+            return;
+        }
+
+        // Define Headers
+        const headers = ['ID', 'Date', 'Description', 'Category', 'Amount'];
+
+        // Convert Data to CSV Format
+        const csvRows = [
+            headers.join(','), // Header Row
+            ...filteredExpenses.map(ex => {
+                // Escape description to handle commas and quotes
+                // Encapsulate in quotes and double-escape existing quotes
+                const safeDescription = `"${(ex.title || '').replace(/"/g, '""')}"`;
+
+                // Format: ID, Date, Description, Category, Amount
+                return [
+                    ex.id,
+                    ex.date, // Assumes YYYY-MM-DD format from API/State
+                    safeDescription,
+                    ex.category,
+                    ex.amount // Numeric only
+                ].join(',');
+            })
+        ];
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        // Generate Filename: expenses_<month>_<year>.csv
+        // If filtered by date, use that date's month/year
+        // Else use current month/year
+        const dateObj = dateFilter ? new Date(dateFilter) : new Date();
+        const monthName = dateObj.toLocaleString('default', { month: 'long' }).toLowerCase();
+        const year = dateObj.getFullYear();
+        const fileName = `expenses_${monthName}_${year}.csv`;
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
         <div className="min-h-screen bg-[#0f172a] font-sans text-slate-300 pb-20 selection:bg-indigo-500/30 selection:text-indigo-200 relative overflow-hidden">
@@ -258,15 +319,27 @@ const Dashboard = () => {
                             <p className="text-slate-400 text-sm mt-1">Monitor your daily spending and subscriptions.</p>
                         </div>
 
-                        <button
-                            onClick={() => setIsAddModalOpen(true)}
-                            className="inline-flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all duration-200 font-semibold shadow-lg shadow-indigo-500/20 active:transform active:scale-95 group cursor-pointer"
-                        >
-                            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add Expense
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleExportCSV}
+                                disabled={filteredExpenses.length === 0}
+                                className={`inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all duration-200 font-semibold shadow-md border border-emerald-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Export CSV
+                            </button>
+                            <button
+                                onClick={() => setIsAddModalOpen(true)}
+                                className="inline-flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all duration-200 font-semibold shadow-lg shadow-indigo-500/20 active:transform active:scale-95 group cursor-pointer"
+                            >
+                                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Expense
+                            </button>
+                        </div>
                     </div>
 
                     <div className="p-6 min-h-[400px]">

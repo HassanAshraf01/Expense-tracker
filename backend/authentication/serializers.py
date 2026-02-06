@@ -16,7 +16,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'name', 'email')
+        fields = ('id', 'name', 'email', 'username', 'date_joined', 'profile_picture', 'is_staff', 'is_superuser')
+        read_only_fields = ('id', 'email', 'username', 'date_joined', 'is_staff', 'is_superuser')
+
+class UpdateUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('name', 'profile_picture')
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -108,3 +114,11 @@ class SetNewPasswordSerializer(serializers.Serializer):
         self.user.set_password(password)
         self.user.save()
         return self.user
+
+class AdminUserDetailSerializer(serializers.ModelSerializer):
+    total_budget = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
+    total_expenses = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'name', 'date_joined', 'total_budget', 'total_expenses')

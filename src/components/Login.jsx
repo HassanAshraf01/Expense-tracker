@@ -26,8 +26,7 @@ const Login = () => {
             localStorage.setItem('refresh_token', response.data.refresh);
             localStorage.setItem('user_name', response.data.name); // Save user name
 
-            navigate('/dashboard');
-            navigate('/dashboard');
+            navigate('/home');
         } catch (err) {
             console.error("Login error:", err.response);
             if (err.response?.data) {

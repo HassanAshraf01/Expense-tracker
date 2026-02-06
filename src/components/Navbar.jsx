@@ -1,16 +1,31 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import api from '../api/axios';
 
 const Navbar = () => {
-    const navigate = useNavigate();
+    const [userProfile, setUserProfile] = useState({
+        name: localStorage.getItem('user_name') || '',
+        username: '',
+        profile_picture: null
+    });
 
-    const handleLogout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user_name');
-        navigate('/login');
-    };
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await api.get('auth/profile/');
+                setUserProfile({
+                    name: response.data.name,
+                    username: response.data.username,
+                    profile_picture: response.data.profile_picture
+                });
+                localStorage.setItem('user_name', response.data.name);
+            } catch (error) {
+                console.error("Navbar profile fetch failed", error);
+            }
+        };
+        fetchProfile();
+    }, []);
 
     return (
         <nav className="bg-[#1e293b]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-30 transition-all duration-200">
@@ -27,6 +42,18 @@ const Navbar = () => {
 
                         {/* Navigation Links */}
                         <div className="hidden md:flex items-center gap-2 mt-2">
+                            <NavLink
+                                to="/home"
+                                className={({ isActive }) => `px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${isActive
+                                    ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20 shadow-lg shadow-indigo-500/5'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
+                                    }`}
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                                Home
+                            </NavLink>
                             <NavLink
                                 to="/dashboard"
                                 className={({ isActive }) => `px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${isActive
@@ -51,33 +78,46 @@ const Navbar = () => {
                                 </svg>
                                 Analytics
                             </NavLink>
+                            <NavLink
+                                to="/budget"
+                                className={({ isActive }) => `px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${isActive
+                                    ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20 shadow-lg shadow-indigo-500/5'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
+                                    }`}
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Budget
+                            </NavLink>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4 -mr-4">
                         {/* User Avatar */}
-                        {localStorage.getItem('user_name') && (
-                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20 border border-white/10 text-white font-bold text-sm tracking-wider select-none transform hover:scale-105 transition-transform duration-200" title={localStorage.getItem('user_name')}>
-                                {(() => {
-                                    const name = localStorage.getItem('user_name') || '';
-                                    const parts = name.trim().split(' ');
-                                    if (parts.length >= 2) {
-                                        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                                    }
-                                    return name.slice(0, 2).toUpperCase();
-                                })()}
+                        <Link to="/profile" className="flex flex-col items-center gap-1 group">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20 border border-white/10 text-white font-bold text-sm tracking-wider select-none transform group-hover:scale-105 transition-transform duration-200 overflow-hidden" title={userProfile.name}>
+                                {userProfile.profile_picture ? (
+                                    <img
+                                        src={userProfile.profile_picture.startsWith('http') ? userProfile.profile_picture : `http://127.0.0.1:8000${userProfile.profile_picture}`}
+                                        alt={userProfile.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    (() => {
+                                        const name = userProfile.name || 'User';
+                                        const parts = name.trim().split(' ');
+                                        if (parts.length >= 2) {
+                                            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                                        }
+                                        return name.slice(0, 2).toUpperCase();
+                                    })()
+                                )}
                             </div>
-                        )}
-
-                        <button
-                            onClick={handleLogout}
-                            className="group flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/50 rounded-xl transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-rose-500/10 active:scale-95"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-rose-400 transition-colors duration-300">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                            </svg>
-                            <span>Logout</span>
-                        </button>
+                            <span className="text-[10px] font-medium text-slate-400 group-hover:text-indigo-400 transition-colors tracking-wide max-w-[80px] truncate text-center">
+                                {userProfile.username ? `@${userProfile.username}` : userProfile.name.split(' ')[0]}
+                            </span>
+                        </Link>
                     </div>
                 </div>
             </div>

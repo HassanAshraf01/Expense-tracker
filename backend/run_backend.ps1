@@ -11,4 +11,5 @@ python manage.py makemigrations authentication
 python manage.py migrate
 
 # Run Server
+python create_local_admin.py
 python manage.py runserver

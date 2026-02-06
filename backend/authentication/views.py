@@ -95,3 +95,34 @@ class CreateSuperuserView(generics.GenericAPIView):
             return Response({'message': 'Superuser already exists'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+from rest_framework.permissions import IsAuthenticated
+from .serializers import UserSerializer, UpdateUserSerializer
+
+class ManageUserView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self):
+        return self.request.user
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return UpdateUserSerializer
+        return UserSerializer
+
+from rest_framework.permissions import IsAdminUser
+from django.db.models import Sum, Value, DecimalField
+from django.db.models.functions import Coalesce
+from .serializers import AdminUserDetailSerializer
+
+class AdminUserListView(generics.ListAPIView):
+    serializer_class = AdminUserDetailSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return User.objects.annotate(
+            total_budget=Coalesce(Sum('budgets__total_balance'), Value(0, output_field=DecimalField())),
+            total_expenses=Coalesce(Sum('expenses__amount'), Value(0, output_field=DecimalField()))
+        ).order_by('-date_joined')
