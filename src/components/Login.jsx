@@ -27,8 +27,24 @@ const Login = () => {
             localStorage.setItem('user_name', response.data.name); // Save user name
 
             navigate('/dashboard');
+            navigate('/dashboard');
         } catch (err) {
-            setError('Invalid email or password');
+            console.error("Login error:", err.response);
+            if (err.response?.data) {
+                const data = err.response.data;
+                // Handle various types of error responses
+                if (data.detail) {
+                    setError(data.detail);
+                } else if (typeof data === 'object') {
+                    // Try to get the first error message from the object
+                    const firstError = Object.values(data).flat()[0];
+                    setError(typeof firstError === 'string' ? firstError : JSON.stringify(data));
+                } else {
+                    setError('Invalid email or password');
+                }
+            } else {
+                setError('Login failed. Please check your connection.');
+            }
         } finally {
             setLoading(false);
         }
